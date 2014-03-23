@@ -1,0 +1,25 @@
+{
+  "name": "gulp-newer-sass",
+  "version": "0.1.0",
+  "dependencies": {},
+  "devDependencies": {
+    "sass-graph": "~0.1.0",
+    "kew": "~0.3.4",
+    "gulp-util": "~2.2.14",
+    "lodash": "~2.4.1",
+    "glob": "~3.2.9"
+  },
+  "engines": {
+    "node": ">=0.8.0"
+  },
+  "description": "A Gulp plugin for passing through only the sass source files that are newer, or whose imports are newer, than corresponding destination file.",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "BSD-2-Clause"
+}
