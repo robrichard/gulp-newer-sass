@@ -9,10 +9,10 @@ var gutil = require('gulp-util');
 
 var PluginError = gutil.PluginError;
 
-function Newer(options) {
+function Newer(dest, options) {
     Transform.call(this, {objectMode: true});
 
-    if (!options) {
+    if (!dest) {
         throw new PluginError('Requires a dest string');
     }
 
@@ -20,19 +20,24 @@ function Newer(options) {
      * Path to destination directory or file.
      * @type {string}
      */
-    this._dest = options;
+    this._dest = dest;
 
     /**
      * Optional extension for destination files.
      * @type {string}
      */
     this._ext = '.css';
-
-    /**
-     * Promise for the dest file/directory stats.
-     * @type {[type]}
-     */
-    this._destStats = Q.nfcall(fs.stat, this._dest);
+    if (options && options.verbose) {
+        this._verbose = true;
+    }
+    this._log = function () {
+        if (this._verbose) {
+            var plugin = '[' + gutil.colors.cyan('gulp-newer-sass') + ']';
+            var args = Array.prototype.slice.call(arguments);
+            args.unshift(plugin);
+            gutil.log.apply(gutil, args)
+        }
+    }
 
 }
 util.inherits(Newer, Transform);
@@ -54,7 +59,6 @@ Newer.prototype._transform = function(srcFile, encoding, done) {
     var self = this;
     // stat dest/relative file
     var destFileRelative = srcFile.relative.replace(/\..*?$/, self._ext);
-    console.log('testing if newer than', path.join(self._dest, destFileRelative));
     Q.nfcall(fs.stat, path.join(self._dest, destFileRelative)).fail(function(err) {
         if (err.code === 'ENOENT') {
             // dest file doesn't exist, pass through all
@@ -64,22 +68,27 @@ Newer.prototype._transform = function(srcFile, encoding, done) {
             return Q.reject(err);
         }
     }).then(function(destFileStats) {
-        var newer = false;
-        graph.visitDescendents(srcFile.path, function(f) {
-            var stat = fs.statSync(f);
-            if (stat.mtime > destFileStats.mtime) {
-                console.log(f, 'is newer');
-                newer = true;
+            var newer = false;
+            if (destFileStats) {
+                graph.visitDescendents(srcFile.path, function(f) {
+                    var stat = fs.statSync(f);
+                    if (stat.mtime > destFileStats.mtime) {
+                        self._log('Newer file detected', f);
+                        newer = true;
+                    }
+                });
+                if (newer) {
+                    self._log('Pushing', srcFile.path);
+                    self.push(srcFile);
+                } else {
+                    self._log('skipping', srcFile.path);
+                }
+            } else {
+                self._log('Destination file does not exist. Pushing', srcFile.path);
+                self.push(srcFile);
             }
-        });
-        if (newer) {
-            console.log('pushing', srcFile.path);
-            self.push(srcFile);
-        } else {
-            console.log('skipping', srcFile.path);
-        }
-        done();
-    }, done);
+            done();
+        }, done);
 
 };
 
@@ -88,6 +97,6 @@ Newer.prototype._transform = function(srcFile, encoding, done) {
  * @param {string} dest Path to destination directory or file.
  * @return {Newer} A transform stream.
  */
-module.exports = function(options) {
-    return new Newer(options);
+module.exports = function(dest, options) {
+    return new Newer(dest, options);
 };
