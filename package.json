@@ -1,8 +1,7 @@
 {
   "name": "gulp-newer-sass",
   "version": "0.1.0",
-  "dependencies": {},
-  "devDependencies": {
+  "dependencies": {
     "sass-graph": "git+ssh://git@github.com:robrichard/sass-graph.git",
     "kew": "~0.3.4",
     "gulp-util": "~2.2.14",
